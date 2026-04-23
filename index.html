@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game UI Motion Portfolio</title>
+    <style>
+        :root { --accent-color: #007aff; }
+        body { background: #080808; color: #fff; font-family: "PingFang SC", "Microsoft YaHei", sans-serif; margin: 0; padding: 20px; }
+        
+        /* 导航 */
+        .nav-container { text-align: center; margin-bottom: 40px; position: sticky; top: 0; background: rgba(8,8,8,0.95); padding: 20px; z-index: 100; backdrop-filter: blur(15px); border-bottom: 1px solid #222; }
+        .nav-main { display: flex; justify-content: center; gap: 15px; margin-bottom: 15px; }
+        .nav-sub { display: none; justify-content: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+        
+        .btn { background: none; border: 1px solid #333; color: #888; padding: 8px 20px; border-radius: 20px; cursor: pointer; transition: 0.3s; font-size: 14px; }
+        .btn:hover { border-color: var(--accent-color); color: #fff; }
+        .btn.active { background: var(--accent-color); color: #fff; border-color: var(--accent-color); font-weight: bold; }
+
+        /* 标准两列网格：最稳固的方案 */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; max-width: 1300px; margin: 0 auto; }
+        
+        .item { border-radius: 16px; background: #121212; overflow: hidden; border: 1px solid #222; cursor: pointer; position: relative; transition: 0.4s; }
+        .item.hidden { display: none; }
+        .item.expanded { grid-column: span 2; border-color: var(--accent-color); cursor: default; }
+        
+        video { width: 100%; display: block; background: #000; }
+        .close-btn { display: none; position: absolute; top: 20px; right: 20px; background: rgba(0,0,0,0.7); color: #fff; border: 1px solid #444; padding: 8px 16px; border-radius: 30px; cursor: pointer; z-index: 10; }
+        .item.expanded .close-btn { display: block; }
+
+        /* PDF 预览区 */
+        #pdf-viewer { display: none; width: 100%; max-width: 1200px; height: 85vh; margin: 0 auto; border: 1px solid #333; border-radius: 16px; overflow: hidden; background: #1a1a1a; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+
+<div class="nav-container">
+    <div class="nav-main">
+        <button class="btn" id="intro-btn" onclick="showPDF(this)">个人简介</button>
+        <button class="btn" onclick="showMain('kachi', this)">卡池</button>
+        <button class="btn" onclick="showMain('lianming', this)">联名</button>
+    </div>
+
+    <div id="sub-kachi" class="nav-sub">
+        <button class="btn" onclick="filterSub('typeA', this)">A类大卡池</button>
+        <button class="btn" onclick="filterSub('typeB', this)">B类不放回卡池</button>
+        <button class="btn" onclick="filterSub('typeC', this)">C类不放回卡池</button>
+    </div>
+
+    <div id="sub-lianming" class="nav-sub">
+        <button class="btn" onclick="filterSub('bear', this)">黄油小熊</button>
+        <button class="btn" onclick="filterSub('dog', this)">线条小狗</button>
+        <button class="btn" onclick="filterSub('horse', this)">小马宝莉</button>
+        <button class="btn" onclick="filterSub('miemie', this)">喜羊羊</button>
+        <button class="btn" onclick="filterSub('zhenhuanzhuan', this)">甄嬛传</button>
+    </div>
+</div>
+
+<div id="pdf-viewer">
+    <iframe src="zuopin.pdf#toolbar=0&navpanes=0"></iframe>
+</div>
+
+<div class="grid" id="portfolio-grid">
+    <script>
+        const config = [
+            {main:'kachi', sub:'typeA', path:'kachi/typeA/kachi_typeA_', count:6},
+            {main:'kachi', sub:'typeB', path:'kachi/typeB/kachi_typeB_', count:8},
+            {main:'kachi', sub:'typeC', path:'kachi/typeC/kachi_typeC_', count:6},
+            {main:'lianming', sub:'bear', path:'lianming/bear/lianming_bear_', count:2},
+            {main:'lianming', sub:'dog', path:'lianming/dog/lianming_dog_', count:5},
+            {main:'lianming', sub:'horse', path:'lianming/horse/lianming_horse_', count:7},
+            {main:'lianming', sub:'miemie', path:'lianming/miemie/lianming_miemie_', count:8},
+            {main:'lianming', sub:'zhenhuanzhuan', path:'lianming/zhenhuanzhuan/lianming_zhenhuanzhuan_', count:3}
+        ];
+
+        config.forEach(group => {
+            for(let i=1; i<=group.count; i++) {
+                let num = i < 10 ? '0' + i : i;
+                document.write(`
+                    <div class="item hidden" data-main="${group.main}" data-sub="${group.sub}" onclick="expandVideo(this)">
+                        <button class="close-btn" onclick="closeVideo(event, this)">收回 ✕</button>
+                        <video src="${group.path}${num}.mp4" muted loop onmouseover="this.play()" onmouseout="stopPreview(this)"></video>
+                    </div>
+                `);
+            }
+        });
+    </script>
+</div>
+
+<script>
+    // 初始展示 PDF
+    window.onload = function() {
+        showPDF(document.getElementById('intro-btn'));
+    };
+
+    function showPDF(btn) {
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('portfolio-grid').style.display = 'none';
+        document.querySelectorAll('.nav-sub').forEach(s => s.style.display = 'none');
+        document.getElementById('pdf-viewer').style.display = 'block';
+    }
+
+    function showMain(mainType, btn) {
+        document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('pdf-viewer').style.display = 'none';
+        document.getElementById('portfolio-grid').style.display = 'grid';
+        document.querySelectorAll('.nav-sub').forEach(s => s.style.display = 'none');
+        document.getElementById('sub-' + mainType).style.display = 'flex';
+        
+        document.querySelectorAll('.item').forEach(item => {
+            if(item.getAttribute('data-main') === mainType) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+            item.classList.remove('expanded');
+            const v = item.querySelector('video'); v.controls = false; v.muted = true;
+        });
+    }
+
+    function filterSub(subType, btn) {
+        document.querySelectorAll('.nav-sub .btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.querySelectorAll('.item').forEach(item => {
+            if(item.getAttribute('data-sub') === subType) {
+                item.classList.remove('hidden');
+            } else {
+                item.classList.add('hidden');
+            }
+            item.classList.remove('expanded');
+        });
+    }
+
+    function expandVideo(container) {
+        if (container.classList.contains('expanded')) return;
+        document.querySelectorAll('.item.expanded').forEach(el => {
+            el.classList.remove('expanded');
+            const v = el.querySelector('video'); v.controls = false; v.muted = true;
+        });
+        container.classList.add('expanded');
+        const v = container.querySelector('video');
+        v.controls = true; v.muted = false; v.play();
+        setTimeout(() => { container.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 300);
+    }
+
+    function closeVideo(event, btn) {
+        event.stopPropagation();
+        const container = btn.parentElement;
+        const v = container.querySelector('video');
+        container.classList.remove('expanded');
+        v.controls = false; v.muted = true; v.pause();
+    }
+
+    function stopPreview(v) {
+        if(!v.parentElement.classList.contains('expanded')) v.pause();
+    }
+</script>
+
+</body>
+</html>
